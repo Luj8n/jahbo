@@ -1246,6 +1246,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
 
 [[package]]
+name = "jahbo"
+version = "0.1.0"
+dependencies = [
+ "cached",
+ "eframe",
+ "encoding",
+ "itertools",
+ "regex",
+ "reqwest",
+ "serde_json",
+ "toml",
+]
+
+[[package]]
 name = "jni"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1340,20 +1354,6 @@ name = "matches"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
-
-[[package]]
-name = "mc_overlay"
-version = "0.1.0"
-dependencies = [
- "cached",
- "eframe",
- "encoding",
- "itertools",
- "regex",
- "reqwest",
- "serde_json",
- "toml",
-]
 
 [[package]]
 name = "memchr"
