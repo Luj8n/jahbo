@@ -282,7 +282,7 @@ impl epi::App for App {
             .on_hover_text("On /who it will first remove all the players");
 
           ui.add_space(10.);
-          ui.add(egui::Slider::new(&mut self.font_size, 6.0..=40.0).text("My value"));
+          ui.add(egui::Slider::new(&mut self.font_size, 6.0..=40.0).text("Font size"));
         });
         ui.add_space(10.);
       });
