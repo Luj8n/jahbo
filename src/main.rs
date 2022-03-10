@@ -5,6 +5,8 @@ use eframe::{egui, epi};
 use encoding::all::UTF_8;
 use encoding::Encoding;
 use itertools::Itertools;
+use rayon::iter::IntoParallelRefIterator;
+use rayon::prelude::*;
 use regex::Regex;
 use std::fs::{read_to_string, File};
 use std::io::{BufReader, Read};
@@ -13,13 +15,21 @@ use std::thread;
 use std::time::Duration;
 
 const SLEEP_DURATION: u64 = 100;
-const PAUSED_BY_DEFAULT: bool = true; // for release should always be true
+const PAUSED_BY_DEFAULT: bool = false; // for release should always be true
 
-// fn get_toml_value(key: &str) -> String {
-//   todo!()
-// }
+fn get_toml_value(file_name: &str, key: &str) -> toml::Value {
+  let file = read_to_string(file_name).expect(&format!("{} file not found", file_name));
+  let parsed_file = file
+    .parse::<toml::Value>()
+    .expect(&format!("{} is not valid toml", file_name));
 
-#[cached(result = true)]
+  parsed_file
+    .get(key)
+    .expect(&format!("{} is not defined in the settings.toml file", key))
+    .clone()
+}
+
+#[cached]
 fn get_uuid(username: String) -> Result<String, String> {
   let response = reqwest::blocking::get(format!("https://api.mojang.com/users/profiles/minecraft/{}", username))
     .map_err(|e| e.to_string())?
@@ -32,17 +42,13 @@ fn get_uuid(username: String) -> Result<String, String> {
     .map(|x| x.to_string())
 }
 
-#[cached(time = 180, result = true)]
+#[cached(time = 180)]
 fn get_data(username: String) -> Result<serde_json::Value, String> {
-  let settings_file = read_to_string("settings.toml").expect("settings.toml file not found");
-  let parsed_settings_file = settings_file
-    .parse::<toml::Value>()
-    .expect("settings.toml is not valid toml");
-  let api_key = parsed_settings_file
-    .get("api_key")
-    .expect("api_key is not defined in the settings.toml file")
+  let api_key = get_toml_value("settings.toml", "api_key")
     .as_str()
-    .expect("api_key should be a string");
+    .clone()
+    .unwrap()
+    .to_string();
 
   let uuid = get_uuid(username)?;
 
@@ -85,6 +91,7 @@ struct Stats {
 
   no_data: bool, // if true, it probably means that the player is nicked
 
+  // TODO: add other ranks like admin, youtuber, etc.
   rank: Option<String>,
   monthly_rank: Option<String>, // if its "SUPERSTAR", its mvp++, i think
 
@@ -244,17 +251,21 @@ impl epi::App for App {
           if ui.button("Add player").clicked()
             || (player_add_text_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter))
           {
+            player_add_text_response.request_focus();
+
             let data = self.data.lock().unwrap();
 
-            // dont add player that is already added
-            if !data
-              .players
-              .iter()
-              .any(|p| p.username.to_lowercase() == self.player_add_text.to_lowercase())
+            let username = self.player_add_text.trim();
+            // dont add a player that is an empty string or is already added
+            if !username.is_empty()
+              && !data
+                .players
+                .iter()
+                .any(|p| p.username.to_lowercase() == username.to_lowercase())
             {
               drop(data);
 
-              let player = get_stats(&self.player_add_text); // takes some time
+              let player = get_stats(username); // takes some time
 
               let mut data = self.data.lock().unwrap();
 
@@ -314,7 +325,7 @@ impl epi::App for App {
           .open(&mut window_is_open)
           .show(ctx, |ui| {
             if player.no_data {
-              ui.strong(self.small_text("No data  - probably nicked", Color32::GRAY));
+              ui.strong(self.small_text("Not a real minecraft username. Could be nicked", Color32::GRAY));
               return;
             }
 
@@ -465,15 +476,11 @@ impl epi::App for App {
     let data_arc = self.data.clone();
 
     thread::spawn(move || {
-      let settings_file = read_to_string("settings.toml").expect("settings.toml file not found");
-      let parsed_settings_file = settings_file
-        .parse::<toml::Value>()
-        .expect("settings.toml is not valid toml");
-      let log_file_path = parsed_settings_file
-        .get("log_file")
-        .expect("log_file is not defined in the settings.toml file")
+      let log_file_path = get_toml_value("settings.toml", "log_file")
         .as_str()
-        .expect("log_file should be a string");
+        .clone()
+        .unwrap()
+        .to_string();
 
       let file = File::open(log_file_path).expect("Log file not found");
       let mut reader = BufReader::new(file);
@@ -550,7 +557,7 @@ impl epi::App for App {
 
               drop(data);
 
-              for username in usernames {
+              usernames.par_iter().for_each(|username| {
                 let data = data_arc.lock().unwrap();
                 if data
                   .players
@@ -558,7 +565,7 @@ impl epi::App for App {
                   .any(|p| p.username.to_lowercase() == username.to_lowercase())
                 {
                   // don't add players which are already added
-                  continue;
+                  return;
                 }
 
                 drop(data);
@@ -569,7 +576,7 @@ impl epi::App for App {
 
                 data.players.push(player);
                 println!("Added {}", username);
-              }
+              });
             }
             ParsedLine::GameStart => {
               println!("Game has started");
