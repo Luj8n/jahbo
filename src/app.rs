@@ -83,46 +83,54 @@ impl epi::App for App {
   }
 
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
+    // self.clear_color();
     ctx.set_visuals(egui::Visuals::dark()); // dark theme
 
     egui::SidePanel::left("left_panel").show(ctx, |ui| {
-      ui.add_space(20.);
       ui.horizontal(|ui| {
         ui.add_space(10.);
         ui.vertical(|ui| {
+          ui.add_space(20.);
+
           let player_add_text_response = ui.text_edit_singleline(&mut self.player_add_text);
-          if ui.button("Add player").clicked()
-            || (player_add_text_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter))
-          {
-            player_add_text_response.request_focus();
 
-            let data = self.data.lock().unwrap();
-
-            let username = self.player_add_text.trim();
-            // dont add a player that is an empty string or is already added
-            if !username.is_empty()
-              && !data
-                .players
-                .iter()
-                .any(|p| p.username.to_lowercase() == username.to_lowercase())
+          ui.add_space(5.);
+          ui.horizontal(|ui| {
+            if ui.button("Add player").clicked()
+              || (player_add_text_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter))
             {
-              drop(data);
+              player_add_text_response.request_focus();
 
-              let player = data::get_stats(username); // takes some time
+              let data = self.data.lock().unwrap();
 
-              let mut data = self.data.lock().unwrap();
+              let username = self.player_add_text.trim();
+              // dont add a player that is an empty string or is already added
+              if !username.is_empty()
+                && !data
+                  .players
+                  .iter()
+                  .any(|p| p.username.to_lowercase() == username.to_lowercase())
+              {
+                drop(data);
 
-              data.players.push(player);
-              self.player_add_text.clear();
+                let player = data::get_stats(username); // takes some time
+
+                let mut data = self.data.lock().unwrap();
+
+                data.players.push(player);
+                self.player_add_text.clear();
+              }
             }
-          }
+
+            let mut data = self.data.lock().unwrap();
+
+            if ui.button("Remove all players").clicked() {
+              data.players.clear();
+            }
+          });
+          ui.add_space(10.);
 
           let mut data = self.data.lock().unwrap();
-
-          if ui.button("Remove all players").clicked() {
-            data.players.clear();
-          }
-          ui.add_space(10.);
 
           ui.checkbox(&mut data.settings.paused, "Paused")
             .on_hover_text("Will not change any data automatically while paused");
