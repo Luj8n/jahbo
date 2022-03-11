@@ -6,9 +6,9 @@ pub struct PlayerStats {
 
   pub no_data: bool, // if true, it probably means that the player is nicked
 
-  // TODO: add other ranks like admin, youtuber, etc.
   pub rank: Option<String>,
-  pub monthly_rank: Option<String>, // if its "SUPERSTAR", its mvp++, i think
+  pub donator_rank: Option<String>,
+  pub monthly_rank: Option<String>, // if its "SUPERSTAR", its probably mvp++
 
   pub achievement_points: Option<i64>,
 
@@ -49,7 +49,8 @@ pub fn get_stats(username: &str) -> PlayerStats {
     username: username.to_string(),
     no_data: false,
 
-    rank: player["newPackageRank"].as_str().map(|x| x.to_string()),
+    rank: player["rank"].as_str().map(|x| x.to_string()),
+    donator_rank: player["newPackageRank"].as_str().map(|x| x.to_string()),
     monthly_rank: player["monthlyPackageRank"].as_str().map(|x| x.to_string()),
 
     achievement_points: player["achievementPoints"].as_i64(),

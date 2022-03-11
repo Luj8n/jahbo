@@ -9,13 +9,16 @@ use std::thread;
 
 const PAUSED_BY_DEFAULT: bool = false; // for release should always be true
 
-fn get_rank_color_and_name(rank: &str, monthly_rank: &str) -> (Color32, String) {
-  match (rank, monthly_rank) {
-    (_, "SUPERSTAR") => (Color32::GOLD, "MVP++ ".to_string()),
-    ("MVP_PLUS", _) => (Color32::LIGHT_BLUE, "MVP+ ".to_string()),
-    ("MVP", _) => (Color32::LIGHT_BLUE, "MVP ".to_string()),
-    ("VIP_PLUS", _) => (Color32::LIGHT_GREEN, "VIP+ ".to_string()),
-    ("VIP", _) => (Color32::LIGHT_GREEN, "VIP ".to_string()),
+fn get_rank_color_and_name(rank: &str, donator_rank: &str, monthly_rank: &str) -> (Color32, String) {
+  match (rank, donator_rank, monthly_rank) {
+    ("ADMIN", _, _) => (Color32::RED, "[ADMIN] ".to_string()),
+    ("GAME_MASTER", _, _) => (Color32::GREEN, "[GM] ".to_string()),
+    ("YOUTUBER", _, _) => (Color32::LIGHT_RED, "[YOUTUBE] ".to_string()),
+    (_, "MVP_PLUS", "SUPERSTAR") => (Color32::GOLD, "[MVP++] ".to_string()),
+    (_, "MVP_PLUS", _) => (Color32::LIGHT_BLUE, "[MVP+] ".to_string()),
+    (_, "MVP", _) => (Color32::LIGHT_BLUE, "[MVP] ".to_string()),
+    (_, "VIP_PLUS", _) => (Color32::LIGHT_GREEN, "[VIP+] ".to_string()),
+    (_, "VIP", _) => (Color32::LIGHT_GREEN, "[VIP] ".to_string()),
     _ => (Color32::GRAY, "".to_string()),
   }
 }
@@ -147,6 +150,7 @@ impl epi::App for App {
       for player in data.players.iter() {
         let (title_color, rank_text) = get_rank_color_and_name(
           player.rank.as_ref().unwrap_or(&"".to_string()),
+          player.donator_rank.as_ref().unwrap_or(&"".to_string()),
           player.monthly_rank.as_ref().unwrap_or(&"".to_string()),
         );
         let title_text = format!(
