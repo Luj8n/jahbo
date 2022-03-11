@@ -148,6 +148,30 @@ pub fn start_parsing_logs(data_arc: Arc<Mutex<crate::app::AppData>>) {
             data.players.push(player);
             println!("Added {}", username);
           });
+
+          // TODO: decide wether this is better
+          // let mut new_players: Vec<data::PlayerStats> = usernames
+          //   .par_iter()
+          //   .filter_map(|username| {
+          //     let data = data_arc.lock().unwrap();
+          //     if data
+          //       .players
+          //       .iter()
+          //       .any(|p| p.username.to_lowercase() == username.to_lowercase())
+          //     {
+          //       // don't add players which are already added
+          //       return None;
+          //     }
+
+          //     drop(data);
+
+          //     println!("Added {}", username);
+          //     Some(data::get_stats(username)) // takes some time
+          //   })
+          //   .collect();
+
+          // let mut data = data_arc.lock().unwrap();
+          // data.players.append(&mut new_players);
         }
         ParsedLine::GameStart => {
           println!("Game has started");
