@@ -9,6 +9,17 @@ use std::thread;
 
 const PAUSED_BY_DEFAULT: bool = false; // for release should always be true
 
+fn get_rank_color_and_name(rank: &str, monthly_rank: &str) -> (Color32, String) {
+  match (rank, monthly_rank) {
+    (_, "SUPERSTAR") => (Color32::GOLD, "MVP++ ".to_string()),
+    ("MVP_PLUS", _) => (Color32::LIGHT_BLUE, "MVP+ ".to_string()),
+    ("MVP", _) => (Color32::LIGHT_BLUE, "MVP ".to_string()),
+    ("VIP_PLUS", _) => (Color32::LIGHT_GREEN, "VIP+ ".to_string()),
+    ("VIP", _) => (Color32::LIGHT_GREEN, "VIP ".to_string()),
+    _ => (Color32::GRAY, "".to_string()),
+  }
+}
+
 #[derive(Debug)]
 pub struct AppSettings {
   pub paused: bool,
@@ -134,7 +145,7 @@ impl epi::App for App {
 
     egui::CentralPanel::default().show(ctx, |_| {
       for player in data.players.iter() {
-        let (title_color, rank_text) = crate::get_rank_color_and_name(
+        let (title_color, rank_text) = get_rank_color_and_name(
           player.rank.as_ref().unwrap_or(&"".to_string()),
           player.monthly_rank.as_ref().unwrap_or(&"".to_string()),
         );

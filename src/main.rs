@@ -1,4 +1,3 @@
-use eframe::epaint::Color32;
 use std::fs::read_to_string;
 
 mod app;
@@ -16,17 +15,6 @@ fn get_toml_value(file_name: &str, key: &str) -> toml::Value {
     .get(key)
     .unwrap_or_else(|| panic!("{} is not defined in the settings.toml file", key))
     .clone()
-}
-
-fn get_rank_color_and_name(rank: &str, monthly_rank: &str) -> (Color32, String) {
-  match (rank, monthly_rank) {
-    (_, "SUPERSTAR") => (Color32::GOLD, "MVP++ ".to_string()),
-    ("MVP_PLUS", _) => (Color32::LIGHT_BLUE, "MVP+ ".to_string()),
-    ("MVP", _) => (Color32::LIGHT_BLUE, "MVP ".to_string()),
-    ("VIP_PLUS", _) => (Color32::LIGHT_GREEN, "VIP+ ".to_string()),
-    ("VIP", _) => (Color32::LIGHT_GREEN, "VIP ".to_string()),
-    _ => (Color32::GRAY, "".to_string()),
-  }
 }
 
 fn main() {
