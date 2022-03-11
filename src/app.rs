@@ -3,29 +3,19 @@ use crate::data::PlayerStats;
 use eframe::egui::RichText;
 use eframe::epaint::Color32;
 use eframe::{egui, epi};
-use encoding::all::UTF_8;
-use encoding::Encoding;
 use itertools::Itertools;
-use rayon::iter::IntoParallelRefIterator;
-use rayon::prelude::*;
-use std::fs::File;
-use std::io::{BufReader, Read};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
 
-// TODO: split this file into different functions
-
-const SLEEP_DURATION: u64 = 100;
 const PAUSED_BY_DEFAULT: bool = false; // for release should always be true
 
 #[derive(Debug)]
-struct AppSettings {
-  paused: bool,
-  auto_join_active: bool,
-  auto_leave_active: bool,
-  auto_add_on_who: bool,
-  auto_clear_on_who: bool,
+pub struct AppSettings {
+  pub paused: bool,
+  pub auto_join_active: bool,
+  pub auto_leave_active: bool,
+  pub auto_add_on_who: bool,
+  pub auto_clear_on_who: bool,
 }
 
 impl Default for AppSettings {
@@ -41,9 +31,9 @@ impl Default for AppSettings {
 }
 
 #[derive(Debug, Default)]
-struct AppData {
-  players: Vec<PlayerStats>,
-  settings: AppSettings,
+pub struct AppData {
+  pub players: Vec<PlayerStats>,
+  pub settings: AppSettings,
 }
 
 #[derive(Debug)]
@@ -314,117 +304,6 @@ impl epi::App for App {
   fn setup(&mut self, _ctx: &egui::Context, _frame: &epi::Frame, _storage: Option<&dyn epi::Storage>) {
     let data_arc = self.data.clone();
 
-    thread::spawn(move || {
-      let log_file_path = crate::get_toml_value("settings.toml", "log_file")
-        .as_str()
-        .clone()
-        .unwrap()
-        .to_string();
-
-      let file = File::open(log_file_path).expect("Log file not found");
-      let mut reader = BufReader::new(file);
-      let mut bytes: Vec<u8> = vec![];
-
-      loop {
-        let byte_count = reader
-          .read_to_end(&mut bytes)
-          .expect("Reading bytes from the .log file went wrong");
-
-        if byte_count == 0 {
-          // eof
-          thread::sleep(Duration::from_millis(SLEEP_DURATION));
-          bytes.clear();
-          continue;
-        }
-
-        let data = data_arc.lock().unwrap();
-
-        if data.settings.paused {
-          continue;
-        }
-
-        drop(data);
-
-        let text_to_eof = UTF_8
-          .decode(&bytes, encoding::DecoderTrap::Ignore)
-          .expect("Decoding to UTF-8 went wrong");
-
-        for line in text_to_eof.lines() {
-          match crate::parse_line(line) {
-            crate::ParsedLine::JoinedLobby { username } => {
-              let data = data_arc.lock().unwrap();
-              if !data.settings.auto_join_active {
-                return;
-              }
-
-              if !data
-                .players
-                .iter()
-                .any(|s| s.username.to_lowercase() == username.to_lowercase())
-              {
-                drop(data);
-
-                let player = data::get_stats(&username); // takes some time
-
-                let mut data = data_arc.lock().unwrap();
-
-                data.players.push(player);
-                println!("Added {}", username);
-              }
-            }
-            crate::ParsedLine::LeftLobby { username } => {
-              let mut data = data_arc.lock().unwrap();
-              if !data.settings.auto_leave_active {
-                return;
-              }
-
-              if let Some((index, _)) = data.players.iter().find_position(|s| s.username == username) {
-                data.players.remove(index);
-                println!("Removed {}", username);
-              }
-            }
-            crate::ParsedLine::LobbyList { usernames } => {
-              let mut data = data_arc.lock().unwrap();
-
-              if data.settings.auto_clear_on_who {
-                data.players.clear();
-              }
-
-              if !data.settings.auto_add_on_who {
-                return;
-              }
-
-              drop(data);
-
-              usernames.par_iter().for_each(|username| {
-                let data = data_arc.lock().unwrap();
-                if data
-                  .players
-                  .iter()
-                  .any(|p| p.username.to_lowercase() == username.to_lowercase())
-                {
-                  // don't add players which are already added
-                  return;
-                }
-
-                drop(data);
-
-                let player = data::get_stats(&username); // takes some time
-
-                let mut data = data_arc.lock().unwrap();
-
-                data.players.push(player);
-                println!("Added {}", username);
-              });
-            }
-            crate::ParsedLine::GameStart => {
-              println!("Game has started");
-            }
-            crate::ParsedLine::Nothing => {}
-          }
-        }
-        bytes.clear();
-      }
-    });
+    thread::spawn(|| crate::parsing::start_parsing_logs(data_arc));
   }
 }

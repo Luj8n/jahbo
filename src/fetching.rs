@@ -9,7 +9,7 @@ pub fn get_uuid(username: String) -> Result<String, String> {
 
   response["id"]
     .as_str()
-    .ok_or("Couldn't get uuid field".to_string())
+    .ok_or_else(|| "Couldn't get uuid field".to_string())
     .map(|x| x.to_string())
 }
 
@@ -17,7 +17,6 @@ pub fn get_uuid(username: String) -> Result<String, String> {
 pub fn get_data(username: String) -> Result<serde_json::Value, String> {
   let api_key = crate::get_toml_value("settings.toml", "api_key")
     .as_str()
-    .clone()
     .unwrap()
     .to_string();
 
