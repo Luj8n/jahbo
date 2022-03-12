@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use std::fs::read_to_string;
 
 mod app;
