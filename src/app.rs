@@ -31,6 +31,7 @@ pub struct AppSettings {
   pub auto_add_on_who: bool,
   pub auto_clear_on_who: bool,
   pub auto_tile: bool,
+  pub auto_sort: bool,
 }
 
 impl Default for AppSettings {
@@ -42,6 +43,7 @@ impl Default for AppSettings {
       auto_add_on_who: true,
       auto_clear_on_who: true,
       auto_tile: false,
+      auto_sort: false,
     }
   }
 }
@@ -136,6 +138,11 @@ impl epi::App for App {
 
                   data.players.push(player);
                   self.player_add_text.clear();
+
+                  if data.settings.auto_sort {
+                    drop(data);
+                    data::sort_players(self.data.clone());
+                  }
                 }
               }
 
@@ -166,6 +173,13 @@ impl epi::App for App {
               .on_hover_text("On /who it will first remove all the players");
             ui.checkbox(&mut data.settings.auto_tile, "Auto tile")
               .on_hover_text("Windows will always be tiled in a grid pattern");
+            if ui.checkbox(&mut data.settings.auto_sort, "Auto order")
+              .on_hover_text("Players will be sorted everytime they are added/removed. Auto tile should be turned on (if not, nothing will update until tiled manully).").clicked() {
+                drop(data);
+                data::sort_players(self.data.clone());
+              } else {
+                drop(data);
+              }
 
             ui.add_space(10.);
             ui.add(egui::Slider::new(&mut self.font_size, 6.0..=40.0).text("Font size"));
@@ -177,6 +191,19 @@ impl epi::App for App {
               .clicked()
               || ctx.input().key_pressed(egui::Key::T)
             {
+              should_tile = true;
+            }
+
+            if ui
+              .button("Order players")
+              .on_hover_text(
+                "Will order players by their final kill/death ratio. Auto tile should be turned on (if not, nothing will update until tiled manully).\nKeybind - O",
+              )
+              .clicked()
+              || ctx.input().key_pressed(egui::Key::O)
+            {
+              data::sort_players(self.data.clone());
+
               should_tile = true;
             }
           });
@@ -288,30 +315,6 @@ fn show_window_content(ui: &mut egui::Ui, player: &PlayerStats, app: &App) {
     }
   }
 
-  let mut beds_ratio = 0.0;
-
-  if let Some(beds_broken_bedwars) = player.beds_broken_bedwars {
-    if let Some(beds_lost_bedwars) = player.beds_lost_bedwars {
-      beds_ratio = beds_broken_bedwars as f64 / beds_lost_bedwars as f64;
-    }
-  }
-
-  let mut final_ratio = 0.0;
-
-  if let Some(final_kills_bedwars) = player.final_kills_bedwars {
-    if let Some(final_deaths_bedwars) = player.final_deaths_bedwars {
-      final_ratio = final_kills_bedwars as f64 / final_deaths_bedwars as f64;
-    }
-  }
-
-  let mut win_ratio = 0.0;
-
-  if let Some(wins_bedwars) = player.wins_bedwars {
-    if let Some(losses_bedwars) = player.losses_bedwars {
-      win_ratio = wins_bedwars as f64 / losses_bedwars as f64;
-    }
-  }
-
   ui.label(tag);
   ui.label(app.small_text(
     &format!(
@@ -320,8 +323,11 @@ fn show_window_content(ui: &mut egui::Ui, player: &PlayerStats, app: &App) {
     ),
     Color32::GRAY,
   ));
-  ui.label(app.small_text(&format!("Final kills/deaths: {:.2}", final_ratio), Color32::WHITE));
-  ui.label(app.small_text(&format!("Wins/losses: {:.2}", win_ratio), Color32::WHITE));
+  ui.label(app.small_text(
+    &format!("Final kills/deaths: {:.2}", player.final_ratio),
+    Color32::WHITE,
+  ));
+  ui.label(app.small_text(&format!("Wins/losses: {:.2}", player.win_ratio), Color32::WHITE));
 
   ui.add_space(15.);
 
@@ -339,7 +345,7 @@ fn show_window_content(ui: &mut egui::Ui, player: &PlayerStats, app: &App) {
     ),
     Color32::WHITE,
   ));
-  ui.label(app.small_text(&format!("Beds broken/lost: {:.2}", beds_ratio), Color32::GRAY));
+  ui.label(app.small_text(&format!("Beds broken/lost: {:.2}", player.beds_ratio), Color32::GRAY));
   ui.label(app.small_text(
     &format!("Karma: {}", player.karma.map_or("N/A".to_string(), |x| x.to_string())),
     Color32::GRAY,

@@ -102,6 +102,11 @@ pub fn start_parsing_logs(data_arc: Arc<Mutex<crate::app::AppData>>) {
 
             data.players.push(player);
             println!("Added {}", username);
+
+            if data.settings.auto_sort {
+              drop(data);
+              data::sort_players(data_arc.clone());
+            }
           }
         }
         ParsedLine::LeftLobby { username } => {
@@ -113,6 +118,11 @@ pub fn start_parsing_logs(data_arc: Arc<Mutex<crate::app::AppData>>) {
           if let Some((index, _)) = data.players.iter().find_position(|s| s.username == username) {
             data.players.remove(index);
             println!("Removed {}", username);
+
+            if data.settings.auto_sort {
+              drop(data);
+              data::sort_players(data_arc.clone());
+            }
           }
         }
         ParsedLine::LobbyList { usernames } => {
@@ -148,6 +158,13 @@ pub fn start_parsing_logs(data_arc: Arc<Mutex<crate::app::AppData>>) {
             data.players.push(player);
             println!("Added {}", username);
           });
+
+          let data = data_arc.lock().unwrap();
+
+          if data.settings.auto_sort {
+            drop(data);
+            data::sort_players(data_arc.clone());
+          }
 
           // TODO: decide wether this is better
           // let mut new_players: Vec<data::PlayerStats> = usernames

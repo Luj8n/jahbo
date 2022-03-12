@@ -1,4 +1,5 @@
 use crate::fetching;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Default)]
 pub struct PlayerStats {
@@ -30,6 +31,10 @@ pub struct PlayerStats {
   pub bedwars_winstreak: Option<i64>,
 
   pub guild_name: Option<String>,
+
+  pub beds_ratio: f64,
+  pub final_ratio: f64,
+  pub win_ratio: f64,
 }
 
 pub fn get_stats(username: &str) -> PlayerStats {
@@ -49,7 +54,7 @@ pub fn get_stats(username: &str) -> PlayerStats {
   let player = &game_stats_response.unwrap()["player"];
   let guild = guild_response.map(|g| g["guild"].clone()).ok();
 
-  PlayerStats {
+  let mut player = PlayerStats {
     username: username.to_string(),
     no_data: false,
 
@@ -77,5 +82,37 @@ pub fn get_stats(username: &str) -> PlayerStats {
     bedwars_winstreak: player["stats"]["Bedwars"]["winstreak"].as_i64(),
 
     guild_name: guild.map(|g| g["name"].as_str().map(|x| x.to_string())).flatten(),
+
+    beds_ratio: 0.0,
+    final_ratio: 0.0,
+    win_ratio: 0.0,
+  };
+
+  if let Some(beds_broken_bedwars) = player.beds_broken_bedwars {
+    if let Some(beds_lost_bedwars) = player.beds_lost_bedwars {
+      player.beds_ratio = beds_broken_bedwars as f64 / beds_lost_bedwars as f64;
+    }
   }
+
+  if let Some(final_kills_bedwars) = player.final_kills_bedwars {
+    if let Some(final_deaths_bedwars) = player.final_deaths_bedwars {
+      player.final_ratio = final_kills_bedwars as f64 / final_deaths_bedwars as f64;
+    }
+  }
+
+  if let Some(wins_bedwars) = player.wins_bedwars {
+    if let Some(losses_bedwars) = player.losses_bedwars {
+      player.win_ratio = wins_bedwars as f64 / losses_bedwars as f64;
+    }
+  }
+
+  player
+}
+
+pub fn sort_players(data_arc: Arc<Mutex<crate::app::AppData>>) {
+  let mut data = data_arc.lock().unwrap();
+
+  data
+    .players
+    .sort_by(|p1, p2| p2.final_ratio.partial_cmp(&p1.final_ratio).unwrap());
 }
