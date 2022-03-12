@@ -146,7 +146,7 @@ impl epi::App for App {
 
               if ui
                 .button("Remove all players")
-                .on_hover_text("Will remove all players.\nKeybind - R")
+                .on_hover_text("Will remove all players.")
                 .clicked()
               {
                 data.players.clear();
@@ -157,7 +157,7 @@ impl epi::App for App {
             let mut data = self.data.lock().unwrap();
 
             ui.checkbox(&mut data.settings.paused, "Paused")
-              .on_hover_text("Will not change any data automatically while paused.\nKeybind - P");
+              .on_hover_text("Will not change any data automatically while paused.");
             ui.checkbox(&mut data.settings.auto_join_active, "Auto join")
               .on_hover_text("If someone joins a bedwars lobby, it will add them");
             ui.checkbox(&mut data.settings.auto_leave_active, "Auto leave")
@@ -182,7 +182,7 @@ impl epi::App for App {
 
             if ui
               .button("Tile windows")
-              .on_hover_text("Will tile all windows in a grid pattern.\nKeybind - T")
+              .on_hover_text("Will tile all windows in a grid pattern.")
               .clicked()
             {
               should_tile = true;
@@ -191,7 +191,7 @@ impl epi::App for App {
             if ui
               .button("Order players")
               .on_hover_text(
-                "Will order players by their final kill/death ratio. Auto tile should be turned on (if not, nothing will update until tiled manully).\nKeybind - O",
+                "Will order players by their final kill/death ratio. Auto tile should be turned on (if not, nothing will update until tiled manully).",
               )
               .clicked()
             {
