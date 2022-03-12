@@ -30,6 +30,7 @@ pub struct AppSettings {
   pub auto_leave_active: bool,
   pub auto_add_on_who: bool,
   pub auto_clear_on_who: bool,
+  pub auto_tile: bool,
 }
 
 impl Default for AppSettings {
@@ -40,6 +41,7 @@ impl Default for AppSettings {
       auto_leave_active: true,
       auto_add_on_who: true,
       auto_clear_on_who: true,
+      auto_tile: false,
     }
   }
 }
@@ -85,7 +87,15 @@ impl epi::App for App {
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
     ctx.set_visuals(egui::Visuals::dark()); // dark theme
 
-    let mut should_tile = false;
+    let mut data = self.data.lock().unwrap();
+
+    if ctx.input().key_pressed(egui::Key::P) {
+      data.settings.paused = !data.settings.paused;
+    }
+
+    let mut should_tile = data.settings.auto_tile;
+
+    drop(data);
 
     egui::SidePanel::left("left_panel")
       .resizable(false)
@@ -100,7 +110,10 @@ impl epi::App for App {
 
             ui.add_space(5.);
             ui.horizontal(|ui| {
-              if ui.button("Add player").clicked()
+              if ui
+                .button("Add player")
+                .on_hover_text("Tries to add a player. Will not add if it's already added")
+                .clicked()
                 || (player_add_text_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter))
               {
                 player_add_text_response.request_focus();
@@ -128,7 +141,12 @@ impl epi::App for App {
 
               let mut data = self.data.lock().unwrap();
 
-              if ui.button("Remove all players").clicked() {
+              if ui
+                .button("Remove all players")
+                .on_hover_text("Will remove all players.\nKeybind - R")
+                .clicked()
+                || ctx.input().key_pressed(egui::Key::R)
+              {
                 data.players.clear();
               }
             });
@@ -137,7 +155,7 @@ impl epi::App for App {
             let mut data = self.data.lock().unwrap();
 
             ui.checkbox(&mut data.settings.paused, "Paused")
-              .on_hover_text("Will not change any data automatically while paused");
+              .on_hover_text("Will not change any data automatically while paused.\nKeybind - P");
             ui.checkbox(&mut data.settings.auto_join_active, "Auto join")
               .on_hover_text("If someone joins a bedwars lobby, it will add them");
             ui.checkbox(&mut data.settings.auto_leave_active, "Auto leave")
@@ -146,12 +164,19 @@ impl epi::App for App {
               .on_hover_text("On /who it will add all the players which are not already added");
             ui.checkbox(&mut data.settings.auto_clear_on_who, "Auto clear on who")
               .on_hover_text("On /who it will first remove all the players");
+            ui.checkbox(&mut data.settings.auto_tile, "Auto tile")
+              .on_hover_text("Windows will always be tiled in a grid pattern");
 
             ui.add_space(10.);
             ui.add(egui::Slider::new(&mut self.font_size, 6.0..=40.0).text("Font size"));
             ui.add_space(10.);
 
-            if ui.button("Tile windows").clicked() {
+            if ui
+              .button("Tile windows")
+              .on_hover_text("Will tile all windows in a grid pattern.\nKeybind - T")
+              .clicked()
+              || ctx.input().key_pressed(egui::Key::T)
+            {
               should_tile = true;
             }
           });
@@ -232,7 +257,7 @@ impl epi::App for App {
 
 fn show_window_content(ui: &mut egui::Ui, player: &PlayerStats, app: &App) {
   if player.no_data {
-    ui.strong(app.small_text("Not a real username. Probably nicked", Color32::GRAY));
+    ui.label(app.small_text("Not a real username. Probably nicked", Color32::WHITE));
     return;
   }
 
@@ -287,32 +312,32 @@ fn show_window_content(ui: &mut egui::Ui, player: &PlayerStats, app: &App) {
     }
   }
 
-  ui.strong(tag);
-  ui.strong(app.small_text(
+  ui.label(tag);
+  ui.label(app.small_text(
     &format!(
       "Guild: {}",
       player.guild_name.as_ref().map_or("None".to_string(), |x| x.to_string())
     ),
     Color32::GRAY,
   ));
-  ui.strong(app.small_text(&format!("Final kills/deaths: {:.2}", final_ratio), Color32::GRAY));
-  ui.strong(app.small_text(&format!("Wins/losses: {:.2}", win_ratio), Color32::GRAY));
+  ui.label(app.small_text(&format!("Final kills/deaths: {:.2}", final_ratio), Color32::WHITE));
+  ui.label(app.small_text(&format!("Wins/losses: {:.2}", win_ratio), Color32::WHITE));
 
   ui.add_space(15.);
 
-  ui.strong(app.small_text(
+  ui.label(app.small_text(
     &format!(
       "Achievement points: {}",
       player.achievement_points.map_or("N/A".to_string(), |x| x.to_string())
     ),
-    Color32::GRAY,
+    Color32::WHITE,
   ));
-  ui.strong(app.small_text(
+  ui.label(app.small_text(
     &format!(
       "Win streak: {}",
       player.bedwars_winstreak.map_or("N/A".to_string(), |x| x.to_string())
     ),
-    Color32::GRAY,
+    Color32::WHITE,
   ));
   ui.label(app.small_text(&format!("Beds broken/lost: {:.2}", beds_ratio), Color32::GRAY));
   ui.label(app.small_text(
