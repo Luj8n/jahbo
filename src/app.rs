@@ -89,11 +89,7 @@ impl epi::App for App {
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
     ctx.set_visuals(egui::Visuals::dark()); // dark theme
 
-    let mut data = self.data.lock().unwrap();
-
-    if ctx.input().key_pressed(egui::Key::P) {
-      data.settings.paused = !data.settings.paused;
-    }
+    let data = self.data.lock().unwrap();
 
     let mut should_tile = data.settings.auto_tile;
 
@@ -152,7 +148,6 @@ impl epi::App for App {
                 .button("Remove all players")
                 .on_hover_text("Will remove all players.\nKeybind - R")
                 .clicked()
-                || ctx.input().key_pressed(egui::Key::R)
               {
                 data.players.clear();
               }
@@ -189,7 +184,6 @@ impl epi::App for App {
               .button("Tile windows")
               .on_hover_text("Will tile all windows in a grid pattern.\nKeybind - T")
               .clicked()
-              || ctx.input().key_pressed(egui::Key::T)
             {
               should_tile = true;
             }
@@ -200,7 +194,6 @@ impl epi::App for App {
                 "Will order players by their final kill/death ratio. Auto tile should be turned on (if not, nothing will update until tiled manully).\nKeybind - O",
               )
               .clicked()
-              || ctx.input().key_pressed(egui::Key::O)
             {
               data::sort_players(self.data.clone());
 
