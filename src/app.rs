@@ -233,6 +233,13 @@ impl epi::App for App {
             }
 
             ui.strong(tag);
+            ui.strong(self.small_text(
+              &format!(
+                "Guild: {}",
+                player.guild_name.as_ref().map_or("None".to_string(), |x| x.to_string())
+              ),
+              Color32::GRAY,
+            ));
             ui.strong(self.small_text(&format!("Final kills/deaths: {:.2}", final_ratio), Color32::GRAY));
             ui.strong(self.small_text(&format!("Wins/losses: {:.2}", win_ratio), Color32::GRAY));
 

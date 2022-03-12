@@ -28,13 +28,16 @@ pub struct PlayerStats {
   pub bedwars_level: Option<i64>,
 
   pub bedwars_winstreak: Option<i64>,
+
+  pub guild_name: Option<String>,
 }
 
 pub fn get_stats(username: &str) -> PlayerStats {
-  let response = fetching::get_data(username.to_string());
+  let game_stats_response = fetching::get_game_stats(username.to_string());
+  let guild_response = fetching::get_guild(username.to_string());
 
-  if response.is_err() {
-    dbg!(response.unwrap_err());
+  if game_stats_response.is_err() {
+    dbg!(game_stats_response.unwrap_err());
 
     return PlayerStats {
       username: username.to_string(),
@@ -43,7 +46,8 @@ pub fn get_stats(username: &str) -> PlayerStats {
     };
   }
 
-  let player = &response.unwrap()["player"];
+  let player = &game_stats_response.unwrap()["player"];
+  let guild = guild_response.map(|g| g["guild"].clone()).ok();
 
   PlayerStats {
     username: username.to_string(),
@@ -71,5 +75,7 @@ pub fn get_stats(username: &str) -> PlayerStats {
     bedwars_level: player["achievements"]["bedwars_level"].as_i64(),
 
     bedwars_winstreak: player["stats"]["Bedwars"]["winstreak"].as_i64(),
+
+    guild_name: guild.map(|g| g["name"].as_str().map(|x| x.to_string())).flatten(),
   }
 }

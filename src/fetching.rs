@@ -13,8 +13,29 @@ pub fn get_uuid(username: String) -> Result<String, String> {
     .map(|x| x.to_string())
 }
 
+#[cached(time = 600)]
+pub fn get_guild(username: String) -> Result<serde_json::Value, String> {
+  let api_key = crate::get_toml_value("settings.toml", "api_key")
+    .as_str()
+    .unwrap()
+    .to_string();
+
+  let uuid = get_uuid(username)?;
+
+  reqwest::blocking::Client::new()
+    .get("https://api.hypixel.net/guild")
+    .query(&[("player", uuid)])
+    .header("API-Key", api_key)
+    .send()
+    .map_err(|e| e.to_string())?
+    .error_for_status()
+    .map_err(|e| e.to_string())?
+    .json::<serde_json::Value>()
+    .map_err(|e| e.to_string())
+}
+
 #[cached(time = 180)]
-pub fn get_data(username: String) -> Result<serde_json::Value, String> {
+pub fn get_game_stats(username: String) -> Result<serde_json::Value, String> {
   let api_key = crate::get_toml_value("settings.toml", "api_key")
     .as_str()
     .unwrap()
