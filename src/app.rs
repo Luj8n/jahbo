@@ -1,13 +1,13 @@
 use crate::data;
 use crate::data::PlayerStats;
+use eframe::egui;
 use eframe::egui::RichText;
 use eframe::epaint::Color32;
-use eframe::{egui, epi};
 use itertools::Itertools;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-const PAUSED_BY_DEFAULT: bool = false; // for release should always be true
+const PAUSED_BY_DEFAULT: bool = !cfg!(debug_assertions); // should be true in release
 
 fn get_rank_color_and_name(rank: &str, donator_rank: &str, monthly_rank: &str) -> (Color32, String) {
   match (rank, donator_rank, monthly_rank) {
@@ -73,6 +73,14 @@ impl Default for App {
 }
 
 impl App {
+  pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    let app = Self::default();
+    let data_arc = app.data.clone();
+
+    thread::spawn(|| crate::parsing::start_parsing_logs(data_arc));
+
+    app
+  }
   fn small_text(&self, text: &str, color: Color32) -> RichText {
     RichText::new(text).color(color).size(self.font_size)
   }
@@ -81,12 +89,8 @@ impl App {
   }
 }
 
-impl epi::App for App {
-  fn name(&self) -> &str {
-    "Jahbo"
-  }
-
-  fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
+impl eframe::App for App {
+  fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
     ctx.set_visuals(egui::Visuals::dark()); // dark theme
 
     let data = self.data.lock().unwrap();
@@ -169,7 +173,7 @@ impl epi::App for App {
             ui.checkbox(&mut data.settings.auto_tile, "Auto tile")
               .on_hover_text("Windows will always be tiled in a grid pattern");
             if ui.checkbox(&mut data.settings.auto_sort, "Auto order")
-              .on_hover_text("Players will be sorted everytime they are added/removed. Auto tile should be turned on (if not, nothing will update until tiled manully).").clicked() {
+              .on_hover_text("Players will be sorted everytime they are added/removed. Auto tile should be turned on (if not, nothing will update until tiled manually).").clicked() {
                 drop(data);
                 data::sort_players(self.data.clone());
               } else {
@@ -265,13 +269,7 @@ impl epi::App for App {
       }
     }
 
-    frame.request_repaint();
-  }
-
-  fn setup(&mut self, _ctx: &egui::Context, _frame: &epi::Frame, _storage: Option<&dyn epi::Storage>) {
-    let data_arc = self.data.clone();
-
-    thread::spawn(|| crate::parsing::start_parsing_logs(data_arc));
+    ctx.request_repaint();
   }
 }
 
