@@ -21,6 +21,8 @@ fn get_toml_value(file_name: &str, key: &str) -> toml::Value {
 }
 
 fn main() {
+  // TODO: generate the settings.toml file (if it's missing) and ask to fill it in
+
   let icon_bytes = include_bytes!("../assets/icon.png");
   let icon = image::load_from_memory(icon_bytes).unwrap();
 

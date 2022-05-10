@@ -39,7 +39,6 @@ pub struct PlayerStats {
 
 pub fn get_stats(username: &str) -> PlayerStats {
   let game_stats_response = fetching::get_game_stats(username.to_string());
-  let guild_response = fetching::get_guild(username.to_string());
 
   if game_stats_response.is_err() {
     dbg!(game_stats_response.unwrap_err());
@@ -50,6 +49,8 @@ pub fn get_stats(username: &str) -> PlayerStats {
       ..Default::default()
     };
   }
+
+  let guild_response = fetching::get_guild(username.to_string());
 
   let player = &game_stats_response.unwrap()["player"];
   let guild = guild_response.map(|g| g["guild"].clone()).ok();
