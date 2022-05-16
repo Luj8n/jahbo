@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 const PAUSED_BY_DEFAULT: bool = !cfg!(debug_assertions); // should be true in release
+const DEFAULT_FONT_SIZE: f32 = 14.;
 
 fn get_rank_color_and_name(rank: &str, donator_rank: &str, monthly_rank: &str) -> (Color32, String) {
   match (rank, donator_rank, monthly_rank) {
@@ -60,6 +61,7 @@ pub struct App {
 
   player_add_text: String,
   font_size: f32,
+  space_scalar: f32,
 }
 
 impl Default for App {
@@ -67,7 +69,8 @@ impl Default for App {
     Self {
       data: Default::default(),
       player_add_text: Default::default(),
-      font_size: 14.,
+      font_size: DEFAULT_FONT_SIZE,
+      space_scalar: 1.,
     }
   }
 }
@@ -99,7 +102,7 @@ impl eframe::App for App {
 
     drop(data);
 
-    egui::SidePanel::left("left_panel")
+    let left_panel = egui::SidePanel::left("left_panel")
       .resizable(false)
       .width_range(220.0..=220.0)
       .show(ctx, |ui| {
@@ -183,6 +186,8 @@ impl eframe::App for App {
             ui.add_space(10.);
             ui.add(egui::Slider::new(&mut self.font_size, 6.0..=40.0).text("Font size"));
             ui.add_space(10.);
+            ui.add(egui::Slider::new(&mut self.space_scalar, 0.1..=2.0).text("Space scalar"));
+            ui.add_space(10.);
 
             if ui
               .button("Tile windows")
@@ -212,16 +217,19 @@ impl eframe::App for App {
 
     let mut players_to_remove: Vec<String> = vec![];
 
-    // TODO: make these variables depend on font size
-    let offset_x = 270;
+    let offset_x = left_panel.response.rect.width() as isize + 10;
     let offset_y = 10;
-    let size_width = 270;
-    let size_height = 330;
-    // TODO: get actual screen width
-    let width_count = (1920 - offset_x) / (size_width);
+    let size_width = (270. * self.space_scalar) as isize;
+    let size_height = (330. * self.space_scalar) as isize;
+    let width_count = (ctx.available_rect().width() as isize) / (size_width);
+
+    if width_count == 0 {
+      return;
+    }
 
     egui::CentralPanel::default().show(ctx, |ui| {
       // TODO: make (vertical) scroll area work
+      // windows cant be put in a scrollarea
       egui::ScrollArea::vertical()
         .always_show_scroll(true)
         .auto_shrink([false, false])
@@ -247,8 +255,8 @@ impl eframe::App for App {
               egui::Window::new(title)
                 .resizable(false)
                 .current_pos((
-                  offset_x as f32 + (index % width_count) as f32 * size_width as f32,
-                  offset_y as f32 + (index / width_count) as f32 * size_height as f32,
+                  offset_x as f32 + (index as isize % width_count) as f32 * size_width as f32,
+                  offset_y as f32 + (index as isize / width_count) as f32 * size_height as f32,
                 ))
                 .open(&mut window_is_open)
                 .show(ctx, |ui| {
