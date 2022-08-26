@@ -82,7 +82,7 @@ pub fn get_stats(username: &str) -> PlayerStats {
 
     bedwars_winstreak: player["stats"]["Bedwars"]["winstreak"].as_i64(),
 
-    guild_name: guild.map(|g| g["name"].as_str().map(|x| x.to_string())).flatten(),
+    guild_name: guild.and_then(|g| g["name"].as_str().map(|x| x.to_string())),
 
     beds_ratio: 0.0,
     final_ratio: 0.0,
