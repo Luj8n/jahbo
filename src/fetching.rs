@@ -23,7 +23,7 @@ pub fn get_guild(username: String) -> Result<serde_json::Value, String> {
   let uuid = get_uuid(username)?;
 
   reqwest::blocking::Client::new()
-    .get("https://api.hypixel.net/guild")
+    .get("https://api.hypixel.net/v2/guild")
     .query(&[("player", uuid)])
     .header("API-Key", api_key)
     .send()
@@ -44,7 +44,7 @@ pub fn get_game_stats(username: String) -> Result<serde_json::Value, String> {
   let uuid = get_uuid(username)?;
 
   reqwest::blocking::Client::new()
-    .get("https://api.hypixel.net/player")
+    .get("https://api.hypixel.net/v2/player")
     .query(&[("uuid", uuid)])
     .header("API-Key", api_key)
     .send()
