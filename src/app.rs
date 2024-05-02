@@ -79,6 +79,8 @@ impl App {
   pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
     let app = Self::default();
     let data_arc = app.data.clone();
+    _cc.egui_ctx.send_viewport_cmd(egui::ViewportCommand::Maximized(true));
+    _cc.egui_ctx.set_visuals(egui::Visuals::dark()); // dark theme
 
     thread::spawn(|| crate::parsing::start_parsing_logs(data_arc));
 
@@ -94,8 +96,6 @@ impl App {
 
 impl eframe::App for App {
   fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-    ctx.set_visuals(egui::Visuals::dark()); // dark theme
-
     let data = self.data.lock().unwrap();
 
     let mut should_tile = data.settings.auto_tile;
@@ -119,7 +119,7 @@ impl eframe::App for App {
                 .button("Add player")
                 .on_hover_text("Tries to add a player. Will not add if it's already added")
                 .clicked()
-                || (player_add_text_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter))
+                || (player_add_text_response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)))
               {
                 player_add_text_response.request_focus();
 
@@ -227,7 +227,7 @@ impl eframe::App for App {
       return;
     }
 
-    egui::CentralPanel::default().show(ctx, |ui| {
+    egui::CentralPanel::default().show(ctx, |_| {
       // TODO: make (vertical) scroll area work
       // windows cant be put in a scrollarea
       // egui::ScrollArea::vertical()

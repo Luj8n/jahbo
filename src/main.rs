@@ -3,6 +3,8 @@
 
 use std::fs::read_to_string;
 
+use eframe::egui::{IconData, ViewportBuilder};
+
 mod app;
 mod data;
 mod fetching;
@@ -27,14 +29,13 @@ fn main() {
   let icon = image::load_from_memory(icon_bytes).unwrap();
 
   let native_options = eframe::NativeOptions {
-    maximized: true,
-    // transparent: true, // TODO
-    icon_data: Some(eframe::IconData {
+    viewport: ViewportBuilder::default().with_maximized(true).with_icon(IconData {
       width: icon.width(),
       height: icon.height(),
       rgba: icon.into_bytes(),
     }),
     ..Default::default()
   };
-  eframe::run_native("Jahbo", native_options, Box::new(|cc| Box::new(app::App::new(cc))));
+
+  eframe::run_native("Jahbo", native_options, Box::new(|cc| Box::new(app::App::new(cc)))).unwrap();
 }
