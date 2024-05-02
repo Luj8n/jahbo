@@ -230,52 +230,52 @@ impl eframe::App for App {
     egui::CentralPanel::default().show(ctx, |ui| {
       // TODO: make (vertical) scroll area work
       // windows cant be put in a scrollarea
-      egui::ScrollArea::vertical()
-        .always_show_scroll(true)
-        .auto_shrink([false, false])
-        .show(ui, |_| {
-          for (index, player) in data.players.iter().enumerate() {
-            let (title_color, rank_text) = get_rank_color_and_name(
-              player.rank.as_ref().unwrap_or(&"".to_string()),
-              player.donator_rank.as_ref().unwrap_or(&"".to_string()),
-              player.monthly_rank.as_ref().unwrap_or(&"".to_string()),
-            );
-            let title_text = format!(
-              "{}{} ⭐{}",
-              rank_text,
-              player.username,
-              player.bedwars_level.map_or("N/A".to_string(), |x| x.to_string())
-            );
+      // egui::ScrollArea::vertical()
+      //   .always_show_scroll(true)
+      //   .auto_shrink([false, false])
+      //   .show(ui, |_| {
+      for (index, player) in data.players.iter().enumerate() {
+        let (title_color, rank_text) = get_rank_color_and_name(
+          player.rank.as_ref().unwrap_or(&"".to_string()),
+          player.donator_rank.as_ref().unwrap_or(&"".to_string()),
+          player.monthly_rank.as_ref().unwrap_or(&"".to_string()),
+        );
+        let title_text = format!(
+          "{}{} ⭐{}",
+          rank_text,
+          player.username,
+          player.bedwars_level.map_or("N/A".to_string(), |x| x.to_string())
+        );
 
-            let title = self.big_text(&title_text, title_color);
+        let title = self.big_text(&title_text, title_color);
 
-            let mut window_is_open = true;
+        let mut window_is_open = true;
 
-            if should_tile {
-              egui::Window::new(title)
-                .resizable(false)
-                .current_pos((
-                  offset_x as f32 + (index as isize % width_count) as f32 * size_width as f32,
-                  offset_y as f32 + (index as isize / width_count) as f32 * size_height as f32,
-                ))
-                .open(&mut window_is_open)
-                .show(ctx, |ui| {
-                  show_window_content(ui, player, self);
-                });
-            } else {
-              egui::Window::new(title)
-                .resizable(false)
-                .open(&mut window_is_open)
-                .show(ctx, |ui| {
-                  show_window_content(ui, player, self);
-                });
-            }
+        if should_tile {
+          egui::Window::new(title)
+            .resizable(false)
+            .current_pos((
+              offset_x as f32 + (index as isize % width_count) as f32 * size_width as f32,
+              offset_y as f32 + (index as isize / width_count) as f32 * size_height as f32,
+            ))
+            .open(&mut window_is_open)
+            .show(ctx, |ui| {
+              show_window_content(ui, player, self);
+            });
+        } else {
+          egui::Window::new(title)
+            .resizable(false)
+            .open(&mut window_is_open)
+            .show(ctx, |ui| {
+              show_window_content(ui, player, self);
+            });
+        }
 
-            if !window_is_open {
-              players_to_remove.push(player.username.clone());
-            }
-          }
-        });
+        if !window_is_open {
+          players_to_remove.push(player.username.clone());
+        }
+      }
+      // });
     });
 
     for username in players_to_remove {

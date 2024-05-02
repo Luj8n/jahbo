@@ -13,7 +13,7 @@ pub fn get_uuid(username: String) -> Result<String, String> {
     .map(|x| x.to_string())
 }
 
-#[cached(time = 600)]
+#[cached(time = 600, result)]
 pub fn get_guild(username: String) -> Result<serde_json::Value, String> {
   let api_key = crate::get_toml_value("settings.toml", "api_key")
     .as_str()
@@ -34,7 +34,7 @@ pub fn get_guild(username: String) -> Result<serde_json::Value, String> {
     .map_err(|e| e.to_string())
 }
 
-#[cached(time = 180)]
+#[cached(time = 180, result)]
 pub fn get_game_stats(username: String) -> Result<serde_json::Value, String> {
   let api_key = crate::get_toml_value("settings.toml", "api_key")
     .as_str()
